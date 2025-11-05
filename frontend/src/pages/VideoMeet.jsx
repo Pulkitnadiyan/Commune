@@ -485,25 +485,27 @@ export default function VideoMeetComponent() {
                             {
                                 (() => {
                                     const totalParticipants = videos.length + 1;
-                                    let gridSize = 12; // Default for 1 participant
+                                    let flexBasis = '100%';
                                     if (totalParticipants === 2) {
-                                        gridSize = 6;
-                                    } else if (totalParticipants > 2 && totalParticipants <= 4) {
-                                        gridSize = 6; // 2x2 layout
-                                    } else if (totalParticipants > 4) {
-                                        gridSize = 4; // 3-column layout
+                                        flexBasis = '50%';
+                                    } else if (totalParticipants === 3) {
+                                        flexBasis = '33.33%';
+                                    } else if (totalParticipants === 4) {
+                                        flexBasis = '25%';
+                                    } else if (totalParticipants >= 5) {
+                                        flexBasis = '20%';
                                     }
 
                                     return (
                                         <>
-                                            <Grid item xs={12} md={gridSize}>
+                                            <Grid item style={{ flexBasis, maxWidth: flexBasis }}>
                                                 <Box sx={{ position: 'relative' }}>
                                                     <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }}></video>
                                                     <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
                                                 </Box>
                                             </Grid>
                                             {videos.map((video) => (
-                                                <Grid item xs={12} md={gridSize} key={video.socketId}>
+                                                <Grid item key={video.socketId} style={{ flexBasis, maxWidth: flexBasis }}>
                                                     <Video stream={video.stream} />
                                                 </Grid>
                                             ))}
