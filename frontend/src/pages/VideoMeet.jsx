@@ -229,11 +229,11 @@ export default function VideoMeetComponent() {
 
             peerConnection.ontrack = (event) => {
                 setVideos(prevVideos => {
-                    const videoExists = prevVideos.find(video => video.socketId === socketListId);
-                    if (videoExists) {
-                        return prevVideos.map(video => 
-                            video.socketId === socketListId ? { ...video, stream: event.streams[0] } : video
-                        );
+                    const videoIndex = prevVideos.findIndex(video => video.socketId === socketListId);
+                    if (videoIndex !== -1) {
+                        const updatedVideos = [...prevVideos];
+                        updatedVideos[videoIndex] = { ...updatedVideos[videoIndex], stream: event.streams[0] };
+                        return updatedVideos;
                     } else {
                         return [...prevVideos, { socketId: socketListId, stream: event.streams[0], username: '' }];
                     }
@@ -302,11 +302,14 @@ export default function VideoMeetComponent() {
 
                 if (user) {
                     setVideos(prevVideos => {
-                        const userExists = prevVideos.some(v => v.socketId === id);
-                        if (userExists) {
-                            return prevVideos.map(v => v.socketId === id ? { ...v, username: user.username } : v);
+                        const videoIndex = prevVideos.findIndex(v => v.socketId === id);
+                        if (videoIndex !== -1) {
+                            const updatedVideos = [...prevVideos];
+                            updatedVideos[videoIndex] = { ...updatedVideos[videoIndex], username: user.username };
+                            return updatedVideos;
+                        } else {
+                            return [...prevVideos, { socketId: id, username: user.username, stream: null }];
                         }
-                        return [...prevVideos, { socketId: id, username: user.username, stream: null }];
                     });
                 }
             })
@@ -498,7 +501,6 @@ export default function VideoMeetComponent() {
 
                                     return (
                                         <>
-                                            <Typography>Total Participants: {totalParticipants}, Grid Size: {gridSize}</Typography>
                                             <Grid item xs={gridSize}>
                                                 <Box sx={{ position: 'relative' }}>
                                                     <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }}></video>
