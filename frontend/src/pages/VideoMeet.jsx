@@ -287,13 +287,16 @@ export default function VideoMeetComponent() {
                 clients.forEach((socketListId) => {
                     if (socketListId !== socketIdRef.current) {
                         createPeerConnection(socketListId);
-                        connections[socketListId].createOffer().then((description) => {
-                            connections[socketListId].setLocalDescription(description)
-                                .then(() => {
-                                    socketRef.current.emit('signal', socketListId, JSON.stringify({ 'sdp': connections[socketListId].localDescription }))
-                                })
-                                .catch(e => console.log(e))
-                        })
+                        // Only create offer if current socketId is lexicographically smaller than the other socketId
+                        if (socketIdRef.current < socketListId) {
+                            connections[socketListId].createOffer().then((description) => {
+                                connections[socketListId].setLocalDescription(description)
+                                    .then(() => {
+                                        socketRef.current.emit('signal', socketListId, JSON.stringify({ 'sdp': connections[socketListId].localDescription }))
+                                    })
+                                    .catch(e => console.log(e))
+                            })
+                        }
                     }
                 });
 
