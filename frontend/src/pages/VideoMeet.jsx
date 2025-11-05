@@ -26,7 +26,7 @@ const Video = ({ stream }) => {
 
     return (
         <Box sx={{ position: 'relative' }}>
-            <video ref={ref} autoPlay playsInline style={{ width: '98%', borderRadius: '10px', maxHeight: '80vh' }} />
+            <video ref={ref} autoPlay playsInline style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }} />
             {stream?.username && <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{stream.username}</Typography>}
         </Box>
     );
@@ -498,7 +498,7 @@ export default function VideoMeetComponent() {
                                         <>
                                             <Grid item xs={12} md={gridSize}>
                                                 <Box sx={{ position: 'relative' }}>
-                                                    <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: '80vh' }}></video>
+                                                    <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }}></video>
                                                     <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
                                                 </Box>
                                             </Grid>
