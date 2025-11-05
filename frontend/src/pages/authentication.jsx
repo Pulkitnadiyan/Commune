@@ -36,9 +36,9 @@ export default function Authentication() {
 
     
 
-    const [username, setUsername] = React.useState();
-    const [password, setPassword] = React.useState();
-    const [name, setName] = React.useState();
+    const [username, setUsername] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [name, setName] = React.useState('');
     const [error, setError] = React.useState();
     const [message, setMessage] = React.useState();
 
@@ -55,7 +55,7 @@ export default function Authentication() {
             await handleGuestLogin();
         } catch (err) {
             console.log(err);
-            let message = (err.response.data.message);
+            let message = err.response?.data?.message || "An unexpected error occurred.";
             setError(message);
         }
     }
@@ -81,7 +81,7 @@ export default function Authentication() {
         } catch (err) {
 
             console.log(err);
-            let message = (err.response.data.message);
+            let message = err.response?.data?.message || "An unexpected error occurred.";
             setError(message);
         }
     }
