@@ -482,17 +482,35 @@ export default function VideoMeetComponent() {
                     </Box>
                     <Grid container spacing={2} sx={{ flexGrow: 1, p: 2 }}>
                         <Grid item xs={12} md={showModal ? 9 : 12} container spacing={2} alignItems="center" justifyContent="center">
-                            <Grid item xs={12} md={videos.length > 0 ? 6 : 12}>
-                                <Box sx={{ position: 'relative' }}>
-                                    <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: '80vh' }}></video>
-                                    <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
-                                </Box>
-                            </Grid>
-                            {videos.map((video) => (
-                                <Grid item xs={12} md={6} key={video.socketId}>
-                                    <Video stream={video.stream} />
-                                </Grid>
-                            ))}
+                            {
+                                (() => {
+                                    const totalParticipants = videos.length + 1;
+                                    let gridSize = 12; // Default for 1 participant
+                                    if (totalParticipants === 2) {
+                                        gridSize = 6;
+                                    } else if (totalParticipants > 2 && totalParticipants <= 4) {
+                                        gridSize = 6; // 2x2 layout
+                                    } else if (totalParticipants > 4) {
+                                        gridSize = 4; // 3-column layout
+                                    }
+
+                                    return (
+                                        <>
+                                            <Grid item xs={12} md={gridSize}>
+                                                <Box sx={{ position: 'relative' }}>
+                                                    <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: '80vh' }}></video>
+                                                    <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
+                                                </Box>
+                                            </Grid>
+                                            {videos.map((video) => (
+                                                <Grid item xs={12} md={gridSize} key={video.socketId}>
+                                                    <Video stream={video.stream} />
+                                                </Grid>
+                                            ))}
+                                        </>
+                                    );
+                                })()
+                            }
                         </Grid>
                         {showModal && (
                             <Grid item xs={12} md={3}>
