@@ -356,6 +356,10 @@ export default function VideoMeetComponent() {
         const duration = Date.now() - startTime;
         const participants = videos.length + 1;
         await addToUserHistory(meetingCode, duration, participants);
+        
+        if (isCreator) {
+            socketRef.current.emit('end-meeting', meetingCode);
+        }
         navigate("/home");
     }
 

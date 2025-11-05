@@ -5,6 +5,7 @@ import { Meeting } from "../models/meeting.model.js";
 let connections = {}
 let messages = {}
 let timeOnline = {}
+let roomCreators = {}; // To store creatorSocketId per room
 
 export const connectToSocket = (server) => {
     const io = new Server(server, {
@@ -21,40 +22,58 @@ export const connectToSocket = (server) => {
 
         console.log("SOMETHING CONNECTED")
 
-        socket.on("join-call", async (path) => {
+        socket.on("join-call", async (roomUrl, username) => {
+
+            const path = roomUrl.substring(roomUrl.lastIndexOf('/') + 1);
 
             try {
                 const meeting = await Meeting.findOne({ meetingCode: path });
-                if (meeting && !meeting.participants.includes(socket.id)) {
+
+                if (!meeting) {
+                    socket.emit('meeting-error', 'Meeting not found');
+                    return;
+                }
+
+                if (!meeting.isActive) {
+                    socket.emit('meeting-error', 'Meeting has ended');
+                    return;
+                }
+
+                // Add participant to meeting in DB
+                if (!meeting.participants.includes(socket.id)) {
                     meeting.participants.push(socket.id);
                     await meeting.save();
                 }
-            } catch (error) {
-                console.error("Error updating meeting participants:", error);
-            }
 
-            if (connections[path] === undefined) {
-                connections[path] = []
-            }
-            connections[path].push(socket.id)
+                socket.join(path);
 
-            timeOnline[socket.id] = new Date();
-
-            // connections[path].forEach(elem => {
-            //     io.to(elem)
-            // })
-
-            for (let a = 0; a < connections[path].length; a++) {
-                io.to(connections[path][a]).emit("user-joined", socket.id, connections[path])
-            }
-
-            if (messages[path] !== undefined) {
-                for (let a = 0; a < messages[path].length; ++a) {
-                    io.to(socket.id).emit("chat-message", messages[path][a]['data'],
-                        messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
+                if (connections[path] === undefined) {
+                    connections[path] = []
                 }
-            }
+                connections[path].push(socket.id)
 
+                timeOnline[socket.id] = new Date();
+
+                // Set creator if this is the first person to join
+                if (!roomCreators[path]) {
+                    roomCreators[path] = socket.id;
+                }
+
+                for (let a = 0; a < connections[path].length; a++) {
+                    io.to(connections[path][a]).emit("user-joined", socket.id, connections[path], username, roomCreators[path])
+                }
+
+                if (messages[path] !== undefined) {
+                    for (let a = 0; a < messages[path].length; ++a) {
+                        io.to(socket.id).emit("chat-message", messages[path][a]['data'],
+                            messages[path][a]['sender'], messages[path][a]['socket-id-sender'])
+                    }
+                }
+
+            } catch (error) {
+                console.error("Error joining call:", error);
+                socket.emit('meeting-error', 'Failed to join meeting');
+            }
         })
 
         socket.on("signal", (toId, message) => {
@@ -90,6 +109,18 @@ export const connectToSocket = (server) => {
 
         })
 
+        socket.on("end-meeting", async (meetingCode) => {
+            if (roomCreators[meetingCode] === socket.id) {
+                try {
+                    await Meeting.updateOne({ meetingCode: meetingCode }, { $set: { isActive: false } });
+                    io.to(meetingCode).emit('meeting-ended-by-creator'); // Notify all participants
+                    console.log(`Meeting ${meetingCode} ended by creator ${socket.id}`);
+                } catch (error) {
+                    console.error("Error ending meeting:", error);
+                }
+            }
+        });
+
         socket.on("disconnect", async () => {
 
             var diffTime = Math.abs(timeOnline[socket.id] - new Date())
@@ -113,16 +144,35 @@ export const connectToSocket = (server) => {
 
                         if (connections[key].length === 0) {
                             delete connections[key]
+                            // If the last person leaves, and they were the creator, clear creator
+                            if (roomCreators[key] === socket.id) {
+                                delete roomCreators[key];
+                            }
                         }
+
+                        // If the creator disconnects, end the meeting
+                        if (roomCreators[key] === socket.id) {
+                            try {
+                                await Meeting.updateOne({ meetingCode: key }, { $set: { isActive: false } });
+                                io.to(key).emit('meeting-ended-by-creator'); // Notify all participants
+                                console.log(`Meeting ${key} ended by creator ${socket.id} due to disconnect`);
+                                delete roomCreators[key]; // Clear creator for this room
+                            } catch (error) {
+                                console.error("Error ending meeting on disconnect:", error);
+                            }
+                        }
+
 
                         try {
                             const meeting = await Meeting.findOne({ meetingCode: key });
                             if (meeting) {
                                 meeting.duration += diffTime;
+                                // Remove disconnected participant from the participants array
+                                meeting.participants = meeting.participants.filter(id => id !== socket.id);
                                 await meeting.save();
                             }
                         } catch (error) {
-                            console.error("Error updating meeting duration:", error);
+                            console.error("Error updating meeting duration or participants on disconnect:", error);
                         }
                     }
                 }

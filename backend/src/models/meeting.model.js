@@ -7,7 +7,8 @@ const meetingSchema = new Schema(
         meetingCode: { type: String, required: true },
         date: { type: Date, default: Date.now, required: true },
         duration: { type: Number, default: 0 },
-        participants: { type: [String], default: [] }
+        participants: { type: [String], default: [] },
+        isActive: { type: Boolean, default: true }
     }
 )
 
