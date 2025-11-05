@@ -498,6 +498,7 @@ export default function VideoMeetComponent() {
 
                                     return (
                                         <>
+                                            <Typography>Total Participants: {totalParticipants}, Grid Size: {gridSize}</Typography>
                                             <Grid item xs={gridSize}>
                                                 <Box sx={{ position: 'relative' }}>
                                                     <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }}></video>
