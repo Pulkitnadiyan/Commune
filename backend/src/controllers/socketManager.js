@@ -1,4 +1,5 @@
 import { Server } from "socket.io"
+import { Meeting } from "../models/meeting.model.js";
 
 
 let connections = {}
@@ -20,7 +21,17 @@ export const connectToSocket = (server) => {
 
         console.log("SOMETHING CONNECTED")
 
-        socket.on("join-call", (path) => {
+        socket.on("join-call", async (path) => {
+
+            try {
+                const meeting = await Meeting.findOne({ meetingCode: path });
+                if (meeting && !meeting.participants.includes(socket.id)) {
+                    meeting.participants.push(socket.id);
+                    await meeting.save();
+                }
+            } catch (error) {
+                console.error("Error updating meeting participants:", error);
+            }
 
             if (connections[path] === undefined) {
                 connections[path] = []
@@ -79,7 +90,7 @@ export const connectToSocket = (server) => {
 
         })
 
-        socket.on("disconnect", () => {
+        socket.on("disconnect", async () => {
 
             var diffTime = Math.abs(timeOnline[socket.id] - new Date())
 
@@ -102,6 +113,16 @@ export const connectToSocket = (server) => {
 
                         if (connections[key].length === 0) {
                             delete connections[key]
+                        }
+
+                        try {
+                            const meeting = await Meeting.findOne({ meetingCode: key });
+                            if (meeting) {
+                                meeting.duration += diffTime;
+                                await meeting.save();
+                            }
+                        } catch (error) {
+                            console.error("Error updating meeting duration:", error);
                         }
                     }
                 }

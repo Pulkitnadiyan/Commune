@@ -8,7 +8,7 @@ import server from "../environment";
 export const AuthContext = createContext({});
 
 const client = axios.create({
-    baseURL: `${server}/api/v1/users`
+    baseURL: `${server}/api/v1`
 })
 
 
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleRegister = async (name, username, password) => {
         try {
-            let request = await client.post("/register", {
+            let request = await client.post("/users/register", {
                 name: name,
                 username: username,
                 password: password
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogin = async (username, password) => {
         try {
-            let request = await client.post("/login", {
+            let request = await client.post("/users/login", {
                 username: username,
                 password: password
             });
@@ -58,9 +58,21 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
+    const handleGuestLogin = async () => {
+        try {
+            let request = await client.post("/users/guest");
+            if (request.status === httpStatus.OK) {
+                localStorage.setItem("token", request.data.token);
+                router("/home");
+            }
+        } catch (err) {
+            throw err;
+        }
+    }
+
     const getHistoryOfUser = async () => {
         try {
-            let request = await client.get("/get_all_activity", {
+            let request = await client.get("/users/get_all_activity", {
                 params: {
                     token: localStorage.getItem("token")
                 }
@@ -72,11 +84,13 @@ export const AuthProvider = ({ children }) => {
         }
     }
 
-    const addToUserHistory = async (meetingCode) => {
+    const addToUserHistory = async (meetingCode, duration, participants) => {
         try {
-            let request = await client.post("/add_to_activity", {
+            let request = await client.post("/users/add_to_activity", {
                 token: localStorage.getItem("token"),
-                meeting_code: meetingCode
+                meeting_code: meetingCode,
+                duration: duration,
+                participants: participants
             });
             return request
         } catch (e) {
@@ -85,8 +99,31 @@ export const AuthProvider = ({ children }) => {
     }
 
 
+    const createMeeting = async () => {
+        try {
+            let request = await client.post("/meetings/create");
+            return request.data;
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const joinMeeting = async (meetingCode) => {
+        try {
+            let request = await client.post("/meetings/join", { meetingCode });
+            return request.data;
+        } catch (err) {
+            throw err;
+        }
+    };
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        window.location.href = "http://localhost:3000/";
+    };
+
     const data = {
-        userData, setUserData, addToUserHistory, getHistoryOfUser, handleRegister, handleLogin
+        userData, setUserData, addToUserHistory, getHistoryOfUser, handleRegister, handleLogin, handleGuestLogin, createMeeting, joinMeeting, handleLogout
     }
 
     return (

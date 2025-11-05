@@ -13,13 +13,24 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { AuthContext } from '../contexts/AuthContext';
-import { Snackbar } from '@mui/material';
+import { Snackbar, Alert } from '@mui/material';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import ToggleButton from '@mui/material/ToggleButton';
 
 
 
 // TODO remove, this demo shouldn't need to reset the theme.
 
-const defaultTheme = createTheme();
+const defaultTheme = createTheme({
+    palette: {
+        primary: {
+            main: '#3f51b5 ', // A shade of blue
+        },
+        secondary: {
+            main: '#42a5f5', // Another shade of blue
+        },
+    },
+});
 
 export default function Authentication() {
 
@@ -37,7 +48,17 @@ export default function Authentication() {
     const [open, setOpen] = React.useState(false)
 
 
-    const { handleRegister, handleLogin } = React.useContext(AuthContext);
+    const { handleRegister, handleLogin, handleGuestLogin } = React.useContext(AuthContext);
+
+    let handleGuest = async () => {
+        try {
+            await handleGuestLogin();
+        } catch (err) {
+            console.log(err);
+            let message = (err.response.data.message);
+            setError(message);
+        }
+    }
 
     let handleAuth = async () => {
         try {
@@ -68,58 +89,94 @@ export default function Authentication() {
 
     return (
         <ThemeProvider theme={defaultTheme}>
-            <Grid container component="main" sx={{ height: '100vh' }}>
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'url("background.png")',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                    padding: 2,
+                    color: 'white',
+                }}
+            >
                 <CssBaseline />
-                <Grid
-                    item
-                    xs={false}
-                    sm={4}
-                    md={7}
-                    sx={{
-                        backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundColor: (t) =>
-                            t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                    }}
-                />
-                <Grid item xs={12} sm={8} md={5} component={Paper} elevation={6} square>
+                <Box sx={{
+                    width: '100%',
+                    padding: '1.6rem 1.2rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    zIndex: 1,
+                }}>
+                    <Typography variant="h4" component="h1" sx={{
+                        fontWeight: 'bold',
+                        color: 'white',
+                        textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+                    }}>
+                        Commune
+                    </Typography>
+                </Box>
+                <Paper elevation={10} sx={{ padding: 5, borderRadius: 3, maxWidth: 450, width: '100%', mt: 8, backgroundColor: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)' }}>
                     <Box
                         sx={{
-                            my: 8,
-                            mx: 4,
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
+                            mt: 2,
                         }}
                     >
-                        <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+                        <Avatar sx={{ m: 1, bgcolor: '#3f51b5 ' }}>
                             <LockOutlinedIcon />
                         </Avatar>
+                        <Typography component="h1" variant="h5" sx={{ mt: 2, mb: 2, color: '#333' }}>
+                            {formState === 0 ? "Sign In" : "Sign Up"}
+                        </Typography>
 
-
-                        <div>
-                            <Button variant={formState === 0 ? "contained" : ""} onClick={() => { setFormState(0) }}>
-                                Sign In
-                            </Button>
-                            <Button variant={formState === 1 ? "contained" : ""} onClick={() => { setFormState(1) }}>
-                                Sign Up
-                            </Button>
-                        </div>
-
-                        <Box component="form" noValidate sx={{ mt: 1 }}>
-                            {formState === 1 ? <TextField
-                                margin="normal"
-                                required
+                        <Box sx={{ width: '100%', mb: 2 }}>
+                            <ToggleButtonGroup
+                                value={formState}
+                                exclusive
+                                onChange={(event, newFormState) => {
+                                    if (newFormState !== null) {
+                                        setFormState(newFormState);
+                                        setError("");
+                                    }
+                                }}
+                                aria-label="text alignment"
                                 fullWidth
-                                id="username"
-                                label="Full Name"
-                                name="username"
-                                value={name}
-                                autoFocus
-                                onChange={(e) => setName(e.target.value)}
-                            /> : <></>}
+                            >
+                                <ToggleButton value={0} aria-label="left aligned">
+                                    Sign In
+                                </ToggleButton>
+                                <ToggleButton value={1} aria-label="centered">
+                                    Sign Up
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Box>
+
+                        <Box component="form" noValidate sx={{ mt: 1, width: '100%' }}>
+                            {formState === 1 && (
+                                <TextField
+                                    margin="normal"
+                                    required
+                                    fullWidth
+                                    id="fullName"
+                                    label="Full Name"
+                                    name="fullName"
+                                    value={name}
+                                    autoFocus
+                                    onChange={(e) => setName(e.target.value)}
+                                    variant="outlined"
+                                />
+                            )}
 
                             <TextField
                                 margin="normal"
@@ -129,9 +186,8 @@ export default function Authentication() {
                                 label="Username"
                                 name="username"
                                 value={username}
-                                autoFocus
                                 onChange={(e) => setUsername(e.target.value)}
-
+                                variant="outlined"
                             />
                             <TextField
                                 margin="normal"
@@ -142,34 +198,60 @@ export default function Authentication() {
                                 value={password}
                                 type="password"
                                 onChange={(e) => setPassword(e.target.value)}
-
                                 id="password"
+                                variant="outlined"
                             />
 
-                            <p style={{ color: "red" }}>{error}</p>
+                            {error && (
+                                <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+                                    {error}
+                                </Alert>
+                            )}
 
                             <Button
                                 type="button"
                                 fullWidth
                                 variant="contained"
-                                sx={{ mt: 3, mb: 2 }}
+                                sx={{
+                                    mt: 3,
+                                    mb: 2,
+                                    py: 1.5,
+                                    borderRadius: '8px',
+                                    background: 'linear-gradient(45deg, #3f51b5  30%, #3f51b5  90%)',
+                                    color: 'white',
+                                    '&:hover': {
+                                        opacity: 0.9,
+                                    },
+                                }}
                                 onClick={handleAuth}
                             >
-                                {formState === 0 ? "Login " : "Register"}
+                                {formState === 0 ? "Sign In" : "Sign Up"}
                             </Button>
 
+                            <Button
+                                type="button"
+                                fullWidth
+                                variant="outlined"
+                                sx={{
+                                    mt: 1,
+                                    mb: 2,
+                                    py: 1.5,
+                                    borderRadius: '8px',
+                                    borderColor: '#3f51b5 ',
+                                    color: '#3f51b5',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                                        borderColor: '#3f51b5 ',
+                                    },
+                                }}
+                                onClick={handleGuest}
+                            >
+                                Continue as Guest
+                            </Button>
                         </Box>
                     </Box>
-                </Grid>
-            </Grid>
-
-            <Snackbar
-
-                open={open}
-                autoHideDuration={4000}
-                message={message}
-            />
-
+                </Paper>
+            </Box>
         </ThemeProvider>
     );
 }
