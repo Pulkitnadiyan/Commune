@@ -483,6 +483,7 @@ export default function VideoMeetComponent() {
                             )}
                         </Menu>
                     </Box>
+                    <pre>{JSON.stringify(videos, null, 2)}</pre>
                     <Grid container spacing={2} sx={{ flexGrow: 1, p: 2 }}>
                         <Grid item xs={12} md={showModal ? 9 : 12} container spacing={2} alignItems="center" justifyContent="center">
                             {
