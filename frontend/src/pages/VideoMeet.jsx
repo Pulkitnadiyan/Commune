@@ -517,7 +517,8 @@ export default function VideoMeetComponent() {
                                             </Grid>
                                             {videos.map((video) => (
                                                 <Grid item xs={gridSize} key={video.socketId}>
-                                                    <Video stream={video.stream} />
+                                                    {video.stream && <Video stream={video.stream} />}
+                                                    <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{video.username}</Typography>
                                                 </Grid>
                                             ))}
                                         </>
