@@ -1,12 +1,21 @@
 import { Meeting } from "../models/meeting.model.js";
+import { User } from "../models/user.model.js";
 import crypto from "crypto";
 import httpStatus from "http-status";
 
 const createMeeting = async (req, res) => {
+    const { token } = req.body;
     try {
+        const user = await User.findOne({ token });
+        if (!user) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "User not found" });
+        }
+
         const meetingCode = crypto.randomBytes(4).toString('hex');
         const newMeeting = new Meeting({
             meetingCode: meetingCode,
+            user_id: user.username,
+            participants: [user.username]
         });
         await newMeeting.save();
         res.status(httpStatus.CREATED).json({ meetingCode });
@@ -16,11 +25,20 @@ const createMeeting = async (req, res) => {
 };
 
 const joinMeeting = async (req, res) => {
-    const { meetingCode } = req.body;
+    const { meetingCode, token } = req.body;
     try {
+        const user = await User.findOne({ token });
+        if (!user) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "User not found" });
+        }
+
         const meeting = await Meeting.findOne({ meetingCode });
         if (!meeting) {
             return res.status(httpStatus.NOT_FOUND).json({ message: "Meeting not found" });
+        }
+        if (!meeting.participants.includes(user.username)) {
+            meeting.participants.push(user.username);
+            await meeting.save();
         }
         res.status(httpStatus.OK).json({ message: "Joined meeting successfully" });
     } catch (error) {
@@ -28,4 +46,26 @@ const joinMeeting = async (req, res) => {
     }
 };
 
-export { createMeeting, joinMeeting };
+const leaveMeeting = async (req, res) => {
+    const { meetingCode, token } = req.body;
+    try {
+        const user = await User.findOne({ token });
+        if (!user) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "User not found" });
+        }
+
+        const meeting = await Meeting.findOne({ meetingCode });
+        if (!meeting) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "Meeting not found" });
+        }
+
+        meeting.participants = meeting.participants.filter(p => p !== user.username);
+        await meeting.save();
+
+        res.status(httpStatus.OK).json({ message: "Left meeting successfully" });
+    } catch (error) {
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: "Something went wrong" });
+    }
+};
+
+export { createMeeting, joinMeeting, leaveMeeting };

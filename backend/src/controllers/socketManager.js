@@ -40,8 +40,8 @@ export const connectToSocket = (server) => {
                 }
 
                 // Add participant to meeting in DB
-                if (!meeting.participants.includes(socket.id)) {
-                    meeting.participants.push(socket.id);
+                if (!meeting.participants.includes(username)) {
+                    meeting.participants.push(username);
                     await meeting.save();
                 }
 
@@ -50,7 +50,7 @@ export const connectToSocket = (server) => {
                 if (connections[path] === undefined) {
                     connections[path] = []
                 }
-                connections[path].push(socket.id)
+                connections[path].push({ id: socket.id, username: username })
 
                 timeOnline[socket.id] = new Date();
 
@@ -60,7 +60,7 @@ export const connectToSocket = (server) => {
                 }
 
                 for (let a = 0; a < connections[path].length; a++) {
-                    io.to(connections[path][a]).emit("user-joined", socket.id, connections[path], username, roomCreators[path])
+                    io.to(connections[path][a].id).emit("user-joined", socket.id, connections[path], { username }, roomCreators[path])
                 }
 
                 if (messages[path] !== undefined) {
@@ -86,7 +86,7 @@ export const connectToSocket = (server) => {
                 .reduce(([room, isFound], [roomKey, roomValue]) => {
 
 
-                    if (!isFound && roomValue.includes(socket.id)) {
+                    if (!isFound && roomValue.some(user => user.id === socket.id)) {
                         return [roomKey, true];
                     }
 
@@ -103,7 +103,7 @@ export const connectToSocket = (server) => {
                 console.log("message", matchingRoom, ":", sender, data)
 
                 connections[matchingRoom].forEach((elem) => {
-                    io.to(elem).emit("chat-message", data, sender, socket.id)
+                    io.to(elem.id).emit("chat-message", data, sender, socket.id)
                 })
             }
 
@@ -112,7 +112,14 @@ export const connectToSocket = (server) => {
         socket.on("end-meeting", async (meetingCode) => {
             if (roomCreators[meetingCode] === socket.id) {
                 try {
-                    await Meeting.updateOne({ meetingCode: meetingCode }, { $set: { isActive: false } });
+                    const meeting = await Meeting.findOne({ meetingCode: meetingCode });
+                    if (meeting) {
+                        const duration = Object.values(timeOnline).reduce((acc, cur) => acc + (new Date() - cur), 0);
+                        meeting.duration = duration;
+                        meeting.isActive = false;
+                        await meeting.save();
+                    }
+
                     io.to(meetingCode).emit('meeting-ended-by-creator'); // Notify all participants
                     console.log(`Meeting ${meetingCode} ended by creator ${socket.id}`);
                 } catch (error) {
@@ -127,53 +134,54 @@ export const connectToSocket = (server) => {
 
             var key
 
-            for (const [k, v] of JSON.parse(JSON.stringify(Object.entries(connections)))) {
+            for (const [k, v] of Object.entries(connections)) {
 
-                for (let a = 0; a < v.length; ++a) {
-                    if (v[a] === socket.id) {
-                        key = k
+                const user = v.find(user => user.id === socket.id);
+                const userIndex = v.findIndex(user => user.id === socket.id);
 
-                        for (let a = 0; a < connections[key].length; ++a) {
-                            io.to(connections[key][a]).emit('user-left', socket.id)
-                        }
+                if (userIndex !== -1) {
+                    key = k
 
-                        var index = connections[key].indexOf(socket.id)
+                    for (let a = 0; a < connections[key].length; ++a) {
+                        io.to(connections[key][a].id).emit('user-left', socket.id)
+                    }
 
-                        connections[key].splice(index, 1)
+                    connections[key].splice(userIndex, 1)
 
 
-                        if (connections[key].length === 0) {
-                            delete connections[key]
-                            // If the last person leaves, and they were the creator, clear creator
-                            if (roomCreators[key] === socket.id) {
-                                delete roomCreators[key];
-                            }
-                        }
-
-                        // If the creator disconnects, end the meeting
+                    if (connections[key].length === 0) {
+                        delete connections[key]
+                        // If the last person leaves, and they were the creator, clear creator
                         if (roomCreators[key] === socket.id) {
-                            try {
-                                await Meeting.updateOne({ meetingCode: key }, { $set: { isActive: false } });
-                                io.to(key).emit('meeting-ended-by-creator'); // Notify all participants
-                                console.log(`Meeting ${key} ended by creator ${socket.id} due to disconnect`);
-                                delete roomCreators[key]; // Clear creator for this room
-                            } catch (error) {
-                                console.error("Error ending meeting on disconnect:", error);
-                            }
+                            delete roomCreators[key];
                         }
+                    }
 
-
+                    // If the creator disconnects, end the meeting
+                    if (roomCreators[key] === socket.id) {
                         try {
-                            const meeting = await Meeting.findOne({ meetingCode: key });
-                            if (meeting) {
-                                meeting.duration += diffTime;
-                                // Remove disconnected participant from the participants array
-                                meeting.participants = meeting.participants.filter(id => id !== socket.id);
-                                await meeting.save();
-                            }
+                            await Meeting.updateOne({ meetingCode: key }, { $set: { isActive: false } });
+                            io.to(key).emit('meeting-ended-by-creator'); // Notify all participants
+                            console.log(`Meeting ${key} ended by creator ${socket.id} due to disconnect`);
+                            delete roomCreators[key]; // Clear creator for this room
                         } catch (error) {
-                            console.error("Error updating meeting duration or participants on disconnect:", error);
+                            console.error("Error ending meeting on disconnect:", error);
                         }
+                    }
+
+
+                    try {
+                        const meeting = await Meeting.findOne({ meetingCode: key });
+                        if (meeting) {
+                            meeting.duration += diffTime;
+                            // Remove disconnected participant from the participants array
+                            if (user) {
+                                meeting.participants = meeting.participants.filter(u => u !== user.username);
+                            }
+                            await meeting.save();
+                        }
+                    } catch (error) {
+                        console.error("Error updating meeting duration or participants on disconnect:", error);
                     }
                 }
 
@@ -184,7 +192,7 @@ export const connectToSocket = (server) => {
 
         socket.on('control-participant', (data) => {
             const { targetId, action } = data;
-            const [matchingRoom] = Object.entries(connections).find(([, participants]) => participants.includes(socket.id)) || [];
+            const [matchingRoom] = Object.entries(connections).find(([, participants]) => participants.some(p => p.id === socket.id)) || [];
         
             if (matchingRoom && roomCreators[matchingRoom] === socket.id) {
                 io.to(targetId).emit('control-action', action);

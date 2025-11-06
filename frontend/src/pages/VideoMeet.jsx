@@ -45,7 +45,7 @@ const peerConfigConnections = {
 export default function VideoMeetComponent() {
 
     const navigate = useNavigate();
-    const { addToUserHistory } = useContext(AuthContext);
+    const { addToUserHistory, handleLogout } = useContext(AuthContext);
     const [startTime, setStartTime] = useState(Date.now());
 
     var socketRef = useRef();
@@ -228,11 +228,14 @@ export default function VideoMeetComponent() {
             }
 
             peerConnection.ontrack = (event) => {
+                console.log("ontrack event fired for socketId:", socketListId);
                 setVideos(prevVideos => {
                     const videoIndex = prevVideos.findIndex(video => video.socketId === socketListId);
                     if (videoIndex !== -1) {
                         const updatedVideos = [...prevVideos];
-                        updatedVideos[videoIndex] = { ...updatedVideos[videoIndex], stream: event.streams[0] };
+                        const updatedVideo = { ...updatedVideos[videoIndex] };
+                        updatedVideo.stream = event.streams[0];
+                        updatedVideos[videoIndex] = updatedVideo;
                         return updatedVideos;
                     } else {
                         return [...prevVideos, { socketId: socketListId, stream: event.streams[0], username: '' }];
@@ -274,7 +277,7 @@ export default function VideoMeetComponent() {
                         }
                         break;
                     case 'ban':
-                        handleEndCall(); // Reuse end call logic to disconnect and navigate
+                        handleLeaveCall(false); // Reuse end call logic to disconnect and navigate
                         break;
                     default:
                         console.log('Unknown control action received:', action);
@@ -284,34 +287,20 @@ export default function VideoMeetComponent() {
             socketRef.current.on('user-joined', (id, clients, user, creatorSocketId) => {
                 setIsCreator(socketIdRef.current === creatorSocketId);
 
-                clients.forEach((socketListId) => {
-                    if (socketListId !== socketIdRef.current) {
-                        createPeerConnection(socketListId);
-                        // Only create offer if current socketId is lexicographically smaller than the other socketId
-                        if (socketIdRef.current < socketListId) {
-                            connections[socketListId].createOffer().then((description) => {
-                                connections[socketListId].setLocalDescription(description)
-                                    .then(() => {
-                                        socketRef.current.emit('signal', socketListId, JSON.stringify({ 'sdp': connections[socketListId].localDescription }))
-                                    })
-                                    .catch(e => console.log(e))
-                            })
-                        }
+                clients.forEach((client) => {
+                    if (client.id !== socketIdRef.current) {
+                        createPeerConnection(client.id);
+                        connections[client.id].createOffer().then((description) => {
+                            connections[client.id].setLocalDescription(description)
+                                .then(() => {
+                                    socketRef.current.emit('signal', client.id, JSON.stringify({ 'sdp': connections[client.id].localDescription }))
+                                })
+                                .catch(e => console.log(e))
+                        })
                     }
                 });
 
-                if (user) {
-                    setVideos(prevVideos => {
-                        const videoIndex = prevVideos.findIndex(v => v.socketId === id);
-                        if (videoIndex !== -1) {
-                            const updatedVideos = [...prevVideos];
-                            updatedVideos[videoIndex] = { ...updatedVideos[videoIndex], username: user.username };
-                            return updatedVideos;
-                        } else {
-                            return [...prevVideos, { socketId: id, username: user.username, stream: null }];
-                        }
-                    });
-                }
+                setVideos(clients.filter(client => client.id !== socketIdRef.current).map(client => ({ socketId: client.id, username: client.username, stream: null })));
             })
         })
     }
@@ -354,16 +343,27 @@ export default function VideoMeetComponent() {
         setScreen(!screen);
     }
 
-    let handleEndCall = async () => {
+    let handleLeaveCall = async (endMeeting) => {
         stopAllTracks();
-        const duration = Date.now() - startTime;
-        const participants = videos.length + 1;
-        await addToUserHistory(meetingCode, duration, participants);
-        
-        if (isCreator) {
-            socketRef.current.emit('end-meeting', meetingCode);
+
+        try {
+            const token = localStorage.getItem("token");
+            await fetch(`${server}/api/meeting/leave`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ meetingCode, token }),
+            });
+        } catch (error) {
+            console.error("Failed to leave meeting:", error);
         }
-        navigate("/home");
+
+        if (endMeeting && isCreator) {
+            const token = localStorage.getItem("token");
+            socketRef.current.emit('end-meeting', meetingCode, token);
+        }
+        handleLogout();
     }
 
     const toggleChat = () => {
@@ -483,7 +483,6 @@ export default function VideoMeetComponent() {
                             )}
                         </Menu>
                     </Box>
-                    <pre>{JSON.stringify(videos, null, 2)}</pre>
                     <Grid container spacing={2} sx={{ flexGrow: 1, p: 2 }}>
                         <Grid item xs={12} md={showModal ? 9 : 12} container spacing={2} alignItems="center" justifyContent="center">
                             {
@@ -540,7 +539,7 @@ export default function VideoMeetComponent() {
                     </Grid>
                     <Box display="flex" justifyContent="center" alignItems="center" p={2} sx={{ background: '#292a2d' }}>
                         <IconButton onClick={handleVideo} sx={{ color: video ? 'white' : '#f28b82' }}><VideocamIcon /></IconButton>
-                        <IconButton onClick={handleEndCall} sx={{ color: 'white', background: '#ea4335', mx: 2, '&:hover': { background: '#d93025' } }}><CallEndIcon /></IconButton>
+                        <IconButton onClick={() => handleLeaveCall(true)} sx={{ color: 'white', background: '#ea4335', mx: 2, '&:hover': { background: '#d93025' } }}><CallEndIcon /></IconButton>
                         <IconButton onClick={handleAudio} sx={{ color: audio ? 'white' : '#f28b82' }}><MicIcon /></IconButton>
                         {screenAvailable && <IconButton onClick={handleScreen} sx={{ color: 'white' }}>{screen ? <StopScreenShareIcon /> : <ScreenShareIcon />}</IconButton>}
                         <Badge badgeContent={newMessages} color="error">

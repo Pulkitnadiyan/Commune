@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }) => {
 
     const createMeeting = async () => {
         try {
-            let request = await client.post("/meetings/create");
+            let request = await client.post("/meetings/create", { token: localStorage.getItem("token") });
             return request.data;
         } catch (err) {
             throw err;
@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }) => {
 
     const joinMeeting = async (meetingCode) => {
         try {
-            let request = await client.post("/meetings/join", { meetingCode });
+            let request = await client.post("/meetings/join", { meetingCode, token: localStorage.getItem("token") });
             return request.data;
         } catch (err) {
             throw err;
@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        router("/");
+        router("/landing");
     };
 
     const data = {

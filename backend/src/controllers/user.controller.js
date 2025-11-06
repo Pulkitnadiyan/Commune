@@ -78,24 +78,27 @@ const getUserHistory = async (req, res) => {
     }
 }
 
-const addToHistory = async (req, res) => {
+const updateMeetingHistory = async (req, res) => {
     const { token, meeting_code, duration, participants } = req.body;
 
     try {
         const user = await User.findOne({ token: token });
+        if (!user) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "User not found" });
+        }
 
-        const newMeeting = new Meeting({
-            user_id: user.username,
-            meetingCode: meeting_code,
-            duration: duration,
-            participants: participants
-        })
+        const meeting = await Meeting.findOne({ meetingCode: meeting_code });
+        if (!meeting) {
+            return res.status(httpStatus.NOT_FOUND).json({ message: "Meeting not found" });
+        }
 
-        await newMeeting.save();
+        meeting.duration = duration;
+        meeting.participants = participants;
+        await meeting.save();
 
-        res.status(httpStatus.CREATED).json({ message: "Added code to history" })
+        res.status(httpStatus.OK).json({ message: "Updated meeting history" });
     } catch (e) {
-        res.json({ message: `Something went wrong ${e}` })
+        res.json({ message: `Something went wrong ${e}` });
     }
 }
 
@@ -126,4 +129,4 @@ const guestLogin = async (req, res) => {
 }
 
 
-export { login, register, getUserHistory, addToHistory, guestLogin }
+export { login, register, getUserHistory, updateMeetingHistory, guestLogin }
