@@ -284,23 +284,31 @@ export default function VideoMeetComponent() {
                 }
             });
 
-            socketRef.current.on('user-joined', (id, clients, user, creatorSocketId) => {
+            socketRef.current.on('user-joined', (id, username, creatorSocketId) => {
+                createPeerConnection(id);
                 setIsCreator(socketIdRef.current === creatorSocketId);
-
-                clients.forEach((client) => {
-                    if (client.id !== socketIdRef.current) {
-                        createPeerConnection(client.id);
-                        connections[client.id].createOffer().then((description) => {
-                            connections[client.id].setLocalDescription(description)
-                                .then(() => {
-                                    socketRef.current.emit('signal', client.id, JSON.stringify({ 'sdp': connections[client.id].localDescription }))
-                                })
-                                .catch(e => console.log(e))
+                connections[id].createOffer().then((description) => {
+                    connections[id].setLocalDescription(description)
+                        .then(() => {
+                            socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
                         })
-                    }
-                });
+                        .catch(e => console.log(e))
+                })
+                setVideos(prevVideos => [...prevVideos, { socketId: id, username, stream: null }]);
+            })
 
-                setVideos(clients.filter(client => client.id !== socketIdRef.current).map(client => ({ socketId: client.id, username: client.username, stream: null })));
+            socketRef.current.on('all-users', (users) => {
+                users.forEach((user) => {
+                    createPeerConnection(user.id);
+                    connections[user.id].createOffer().then((description) => {
+                        connections[user.id].setLocalDescription(description)
+                            .then(() => {
+                                socketRef.current.emit('signal', user.id, JSON.stringify({ 'sdp': connections[user.id].localDescription }))
+                            })
+                            .catch(e => console.log(e))
+                    })
+                })
+                setVideos(users.map(user => ({ socketId: user.id, username: user.username, stream: null })));
             })
         })
     }

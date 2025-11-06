@@ -36,10 +36,7 @@ const joinMeeting = async (req, res) => {
         if (!meeting) {
             return res.status(httpStatus.NOT_FOUND).json({ message: "Meeting not found" });
         }
-        if (!meeting.participants.includes(user.username)) {
-            meeting.participants.push(user.username);
-            await meeting.save();
-        }
+        await Meeting.updateOne({ meetingCode }, { $addToSet: { participants: user.username } });
         res.status(httpStatus.OK).json({ message: "Joined meeting successfully" });
     } catch (error) {
         res.status(httpStatus.INTERNAL_SERVER_ERROR).json({ message: "Something went wrong" });

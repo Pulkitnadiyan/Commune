@@ -59,8 +59,12 @@ export const connectToSocket = (server) => {
                     roomCreators[path] = socket.id;
                 }
 
-                for (let a = 0; a < connections[path].length; a++) {
-                    io.to(connections[path][a].id).emit("user-joined", socket.id, connections[path], { username }, roomCreators[path])
+                io.to(socket.id).emit("all-users", connections[path]);
+
+                for (let i = 0; i < connections[path].length; i++) {
+                    if (connections[path][i].id !== socket.id) {
+                        io.to(connections[path][i].id).emit("user-joined", socket.id, username, roomCreators[path]);
+                    }
                 }
 
                 if (messages[path] !== undefined) {
