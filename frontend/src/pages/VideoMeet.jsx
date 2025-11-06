@@ -238,7 +238,7 @@ export default function VideoMeetComponent() {
                         updatedVideos[videoIndex] = updatedVideo;
                         return updatedVideos;
                     } else {
-                        return [...prevVideos, { socketId: socketListId, stream: event.streams[0], username: '' }];
+                        return [...prevVideos, { socketId: socketListId, stream: event.streams[0], username: connections[socketListId].username }];
                     }
                 });
             };
