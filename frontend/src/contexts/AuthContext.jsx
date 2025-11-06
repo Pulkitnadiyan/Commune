@@ -119,7 +119,7 @@ export const AuthProvider = ({ children }) => {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        window.location.href = "http://localhost:3000/";
+        router("/");
     };
 
     const data = {
