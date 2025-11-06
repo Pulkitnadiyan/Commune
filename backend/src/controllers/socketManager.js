@@ -182,6 +182,15 @@ export const connectToSocket = (server) => {
 
         })
 
+        socket.on('control-participant', (data) => {
+            const { targetId, action } = data;
+            const [matchingRoom] = Object.entries(connections).find(([, participants]) => participants.includes(socket.id)) || [];
+        
+            if (matchingRoom && roomCreators[matchingRoom] === socket.id) {
+                io.to(targetId).emit('control-action', action);
+            }
+        });
+
 
     })
 
