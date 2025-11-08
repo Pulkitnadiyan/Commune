@@ -374,22 +374,6 @@ export default function VideoMeetComponent() {
         navigate("/home");
     }
 
-            peerConnection.ontrack = (event) => {
-                console.log("ontrack event fired for socketId:", socketListId);
-                setVideos(prevVideos => {
-                    const videoIndex = prevVideos.findIndex(video => video.socketId === socketListId);
-                    if (videoIndex !== -1) {
-                        const updatedVideos = [...prevVideos];
-                        const updatedVideo = { ...updatedVideos[videoIndex] };
-                        updatedVideo.stream = event.streams[0];
-                        updatedVideos[videoIndex] = updatedVideo;
-                        return updatedVideos;
-                    } else {
-                        return [...prevVideos, { socketId: socketListId, stream: event.streams[0], username: connections[socketListId].username }];
-                    }
-                });
-            };
-
     const toggleChat = () => {
         setModal(prevShowModal => {
             if (!prevShowModal) {
