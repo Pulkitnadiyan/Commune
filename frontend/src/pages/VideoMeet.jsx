@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import io from "socket.io-client";
 import { Badge, IconButton, TextField, Button, Box, Typography, Paper, Grid, Menu, MenuItem, ListItemText } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -68,30 +68,9 @@ export default function VideoMeetComponent() {
     const open = Boolean(anchorEl);
 
 
-    useEffect(() => {
-        const url = window.location.href;
-        const code = url.substring(url.lastIndexOf('/') + 1);
-        setMeetingCode(code);
-        getPermissions();
-    }, [getPermissions])
 
-    useEffect(() => {
-        if (localVideoref.current && window.localStream) {
-            localVideoref.current.srcObject = window.localStream;
-        }
-    }, [askForUsername]);
 
-    let getDislayMedia = () => {
-        if (screen) {
-            if (navigator.mediaDevices.getDisplayMedia) {
-                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
-                    .then(getDislayMediaSuccess)
-                    .catch((e) => console.log(e))
-            }
-        }
-    }
-
-    const getPermissions = async () => {
+    const getPermissions = useCallback(async () => {
         let stream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -125,7 +104,20 @@ export default function VideoMeetComponent() {
         } else {
             setScreenAvailable(false);
         }
-    };
+    }, [username]);
+
+    useEffect(() => {
+        const url = window.location.href;
+        const code = url.substring(url.lastIndexOf('/') + 1);
+        setMeetingCode(code);
+        getPermissions();
+    }, [getPermissions])
+
+    useEffect(() => {
+        if (localVideoref.current && window.localStream) {
+            localVideoref.current.srcObject = window.localStream;
+        }
+    }, [askForUsername]);
 
     let getMedia = () => {
         connectToSocketServer();
@@ -327,6 +319,16 @@ export default function VideoMeetComponent() {
             }
         }
     }
+
+    const getDislayMedia = useCallback(() => {
+        if (screen) {
+            if (navigator.mediaDevices.getDisplayMedia) {
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+                    .then(getDislayMediaSuccess)
+                    .catch((e) => console.log(e))
+            }
+        }
+    }, [screen]);
 
     useEffect(() => {
         if (screen !== undefined) {
