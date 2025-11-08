@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Card, Box, CardContent, Button, Typography, AppBar, Toolbar, IconButton, Grid } from '@mui/material';
+import { Card, Box, CardContent, Typography, AppBar, Toolbar, IconButton, Grid } from '@mui/material';
 import HomeIcon from '@mui/icons-material/Home';
 
 export default function History() {
