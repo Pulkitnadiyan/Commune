@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useContext } from 'react';
 import io from "socket.io-client";
-import { Badge, IconButton, TextField, Button, Box, Typography, Paper, Grid, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Badge, IconButton, TextField, Button, Box, Typography, Paper, Grid, Menu, MenuItem, ListItemText } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
 import VideocamOffIcon from '@mui/icons-material/VideocamOff';
 import CallEndIcon from '@mui/icons-material/CallEnd';
@@ -45,9 +45,6 @@ const peerConfigConnections = {
 export default function VideoMeetComponent() {
 
     const navigate = useNavigate();
-    const { addToUserHistory, handleLogout } = useContext(AuthContext);
-    const [startTime, setStartTime] = useState(Date.now());
-
     var socketRef = useRef();
     let socketIdRef = useRef();
 
