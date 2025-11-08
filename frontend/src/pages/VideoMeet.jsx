@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useContext } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import io from "socket.io-client";
 import { Badge, IconButton, TextField, Button, Box, Typography, Paper, Grid, Menu, MenuItem, ListItemText } from '@mui/material';
 import VideocamIcon from '@mui/icons-material/Videocam';
@@ -13,7 +13,7 @@ import server from '../environment';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PersonOffIcon from '@mui/icons-material/PersonOff';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../contexts/AuthContext';
+
 
 const Video = ({ stream }) => {
     const ref = useRef();
@@ -51,8 +51,6 @@ export default function VideoMeetComponent() {
     let localVideoref = useRef();
     const localStreamRef = useRef();
 
-    let [videoAvailable, setVideoAvailable] = useState(true);
-    let [audioAvailable, setAudioAvailable] = useState(true);
     let [video, setVideo] = useState(true);
     let [audio, setAudio] = useState(true);
     let [screen, setScreen] = useState();
@@ -75,7 +73,7 @@ export default function VideoMeetComponent() {
         const code = url.substring(url.lastIndexOf('/') + 1);
         setMeetingCode(code);
         getPermissions();
-    }, [])
+    }, [getPermissions])
 
     useEffect(() => {
         if (localVideoref.current && window.localStream) {
@@ -97,23 +95,15 @@ export default function VideoMeetComponent() {
         let stream;
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            setVideoAvailable(true);
-            setAudioAvailable(true);
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                setVideoAvailable(true);
-                setAudioAvailable(false);
                 setAudio(false);
             } catch (err) {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
-                    setVideoAvailable(false);
-                    setAudioAvailable(true);
                     setVideo(false);
                 } catch (err) {
-                    setVideoAvailable(false);
-                    setAudioAvailable(false);
                     setVideo(false);
                     setAudio(false);
                     return;
@@ -342,7 +332,7 @@ export default function VideoMeetComponent() {
         if (screen !== undefined) {
             getDislayMedia();
         }
-    }, [screen])
+    }, [screen, getDislayMedia])
 
     let handleScreen = () => {
         setScreen(!screen);
