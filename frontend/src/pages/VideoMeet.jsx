@@ -265,6 +265,7 @@ export default function VideoMeetComponent() {
 
             socketRef.current.on('user-joined', (id, username, creatorSocketId) => {
                 createPeerConnection(id);
+                connections[id].username = username; // Store the username
                 setIsCreator(socketIdRef.current === creatorSocketId);
                 connections[id].createOffer().then((description) => {
                     connections[id].setLocalDescription(description)
@@ -279,6 +280,7 @@ export default function VideoMeetComponent() {
             socketRef.current.on('all-users', (users) => {
                 users.forEach((user) => {
                     createPeerConnection(user.id);
+                    connections[user.id].username = user.username; // Store the username
                     connections[user.id].createOffer().then((description) => {
                         connections[user.id].setLocalDescription(description)
                             .then(() => {
