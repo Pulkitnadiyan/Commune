@@ -15,7 +15,7 @@ import PersonOffIcon from '@mui/icons-material/PersonOff';
 import { useNavigate } from 'react-router-dom';
 
 
-const Video = ({ stream }) => {
+const Video = ({ stream, username }) => {
     const ref = useRef();
 
     useEffect(() => {
@@ -27,7 +27,7 @@ const Video = ({ stream }) => {
     return (
         <Box sx={{ position: 'relative' }}>
             <video ref={ref} autoPlay playsInline style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }} />
-            {stream?.username && <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{stream.username}</Typography>}
+            {username && <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username}</Typography>}
         </Box>
     );
 };
@@ -506,8 +506,7 @@ export default function VideoMeetComponent() {
                                             </Grid>
                                             {videos.map((video) => (
                                                 <Grid item xs={gridSize} key={video.socketId}>
-                                                    {video.stream && <Video stream={video.stream} />}
-                                                    <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{video.username}</Typography>
+                                                    {video.stream && <Video stream={video.stream} username={video.username} />}
                                                 </Grid>
                                             ))}
                                         </>
