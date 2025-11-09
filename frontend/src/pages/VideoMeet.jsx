@@ -38,7 +38,11 @@ var connections = {};
 
 const peerConfigConnections = {
     "iceServers": [
-        { "urls": "stun:stun.l.google.com:19302" }
+        { "urls": "stun:stun.l.google.com:19302" },
+        { "urls": "stun:stun1.l.google.com:19302" },
+        { "urls": "stun:stun2.l.google.com:19302" },
+        { "urls": "stun:stun3.l.google.com:19302" },
+        { "urls": "stun:stun4.l.google.com:19302" },
     ]
 }
 
@@ -94,9 +98,6 @@ export default function VideoMeetComponent() {
             window.localStream = stream;
             localStreamRef.current = stream;
             window.localStream.username = username;
-            if (localVideoref.current) {
-                localVideoref.current.srcObject = stream;
-            }
         }
 
         if (navigator.mediaDevices.getDisplayMedia) {
@@ -110,11 +111,7 @@ export default function VideoMeetComponent() {
         const url = window.location.href;
         const code = url.substring(url.lastIndexOf('/') + 1);
         setMeetingCode(code);
-        getPermissions().then(() => {
-            if (localVideoref.current && localStreamRef.current) {
-                localVideoref.current.srcObject = localStreamRef.current;
-            }
-        });
+        getPermissions()
     }, [getPermissions])
 
     useEffect(() => {
