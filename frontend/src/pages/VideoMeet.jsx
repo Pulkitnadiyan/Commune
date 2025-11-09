@@ -421,14 +421,14 @@ export default function VideoMeetComponent() {
             {askForUsername ? (
                 <Box display="flex" flexDirection="column" justifyContent="center" alignItems="center" minHeight="100vh">
                     <Typography variant="h4" gutterBottom>Enter Lobby</Typography>
-                    <Paper elevation={3} sx={{ p: 4, borderRadius: '16px', background: 'white', width: '90%', maxWidth: '500px' }}>
+                    <Paper elevation={3} sx={{ p: 4, borderRadius: '16px', background: '#2d2d2d', width: '90%', maxWidth: '500px' }}>
                         <TextField
                             fullWidth
                             label="Username"
                             value={username}
                             onChange={e => setUsername(e.target.value)}
                             variant="outlined"
-                            sx={{ mb: 2, input: { color: 'white' }, label: { color: 'gray' } }}
+                            sx={{ mb: 2, input: { color: 'white' }, "& .MuiOutlinedInput-root": { "& > fieldset": { borderColor: "gray" } }, "& .MuiInputLabel-root": { color: "gray" } }}
                         />
                         <Box display="flex" justifyContent="center" gap={2} mb={2}>
                             <IconButton onClick={handleVideo} sx={{ color: video ? '#3f51b5' : '#f28b82', border: '1px solid' }}>
