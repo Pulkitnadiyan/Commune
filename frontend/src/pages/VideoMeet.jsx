@@ -25,8 +25,8 @@ const Video = ({ stream, username }) => {
     }, [stream]);
 
     return (
-        <Box sx={{ position: 'relative' }}>
-            <video ref={ref} autoPlay playsInline style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }} />
+        <Box sx={{ position: 'relative', height: '100%' }}>
+            <video ref={ref} autoPlay playsInline style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} />
             {username && <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username}</Typography>}
         </Box>
     );
@@ -444,7 +444,7 @@ export default function VideoMeetComponent() {
                             Connect
                         </Button>
                         <Box mt={2} borderRadius="10px" overflow="hidden" border="2px solid #3f51b5">
-                            <video ref={localVideoref} autoPlay muted style={{ width: '100%' }}></video>
+                            <video ref={localVideoref} autoPlay muted style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
                         </Box>
                     </Paper>
                 </Box>
@@ -482,60 +482,46 @@ export default function VideoMeetComponent() {
                             )}
                         </Menu>
                     </Box>
-                    <Grid container spacing={2} sx={{ flexGrow: 1, p: 2 }}>
-                        <Grid item xs={12} md={showModal ? 9 : 12} container spacing={2} alignItems="center" justifyContent="center">
+                    <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+                        <Box sx={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', p: 2, gap: 2, flexGrow: 1 }}>
                             {
                                 (() => {
                                     const totalParticipants = videos.length + 1;
-                                    let gridSize = 12; // Default for 1 participant
-                                    if (totalParticipants === 2) {
-                                        gridSize = 6;
-                                    } else if (totalParticipants === 3) {
-                                        gridSize = 4;
-                                    } else if (totalParticipants === 4) {
-                                        gridSize = 3;
-                                    } else if (totalParticipants >= 5) {
-                                        gridSize = 2;
-                                    }
 
                                     return (
                                         <>
-                                            <Grid item xs={gridSize}>
-                                                <Box sx={{ position: 'relative' }}>
-                                                    <video ref={localVideoref} autoPlay muted style={{ width: '98%', borderRadius: '10px', maxHeight: 'calc(50vh - 20px)', objectFit: 'cover' }}></video>
-                                                    <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
-                                                </Box>
-                                            </Grid>
+                                            <Box sx={{ flex: `0 0 calc(100% / ${totalParticipants})`, position: 'relative', height: '100%' }}>
+                                                <video ref={localVideoref} autoPlay muted style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
+                                                <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
+                                            </Box>
                                             {videos.map((video) => (
-                                                <Grid item xs={gridSize} key={video.socketId}>
+                                                <Box sx={{ flex: `0 0 calc(100% / ${totalParticipants})`, position: 'relative', height: '100%' }} key={video.socketId}>
                                                     {video.stream && <Video stream={video.stream} username={video.username} />}
-                                                </Grid>
+                                                </Box>
                                             ))}
                                         </>
                                     );
                                 })()
                             }
-                        </Grid>
+                        </Box>
                         {showModal && (
-                            <Grid item xs={12} md={3}>
-                                <Paper sx={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#292a2d', borderRadius: '10px' }}>
-                                    <Typography variant="h6" sx={{ p: 2, borderBottom: '1px solid #5f6368' }}>Chat</Typography>
-                                    <Box sx={{ flexGrow: 1, p: 2, overflowY: 'auto' }}>
-                                        {messages.length > 0 ? messages.map((item, index) => (
-                                            <Box key={index} sx={{ mb: 1 }}>
-                                                <Typography variant="caption" sx={{ color: '#8ab4f8' }}>{item.sender}</Typography>
-                                                <Typography>{item.data}</Typography>
-                                            </Box>
-                                        )) : <Typography>No Messages Yet</Typography>}
-                                    </Box>
-                                    <Box display="flex" p={2} borderTop="1px solid #5f6368">
-                                        <TextField fullWidth size="small" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Enter Your chat" variant="outlined" sx={{ mr: 1, input: { color: 'white' }, fieldset: { borderColor: 'gray' } }} />
-                                        <Button variant='contained' onClick={sendMessage} sx={{ background: '#8ab4f8' }}>Send</Button>
-                                    </Box>
-                                </Paper>
-                            </Grid>
+                            <Paper sx={{ width: '350px', display: 'flex', flexDirection: 'column', background: '#292a2d', borderRadius: '10px', m: 2 }}>
+                                <Typography variant="h6" sx={{ p: 2, borderBottom: '1px solid #5f6368' }}>Chat</Typography>
+                                <Box sx={{ flexGrow: 1, p: 2, overflowY: 'auto' }}>
+                                    {messages.length > 0 ? messages.map((item, index) => (
+                                        <Box key={index} sx={{ mb: 1 }}>
+                                            <Typography variant="caption" sx={{ color: '#8ab4f8' }}>{item.sender}</Typography>
+                                            <Typography>{item.data}</Typography>
+                                        </Box>
+                                    )) : <Typography>No Messages Yet</Typography>}
+                                </Box>
+                                <Box display="flex" p={2} borderTop="1px solid #5f6368">
+                                    <TextField fullWidth size="small" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Enter Your chat" variant="outlined" sx={{ mr: 1, input: { color: 'white' }, fieldset: { borderColor: 'gray' } }} />
+                                    <Button variant='contained' onClick={sendMessage} sx={{ background: '#8ab4f8' }}>Send</Button>
+                                </Box>
+                            </Paper>
                         )}
-                    </Grid>
+                    </Box>
                     <Box display="flex" justifyContent="center" alignItems="center" p={2} sx={{ background: '#292a2d' }}>
                         <IconButton onClick={handleVideo} sx={{ color: video ? 'white' : '#f28b82' }}><VideocamIcon /></IconButton>
                         <IconButton onClick={() => handleLeaveCall(true)} sx={{ color: 'white', background: '#ea4335', mx: 2, '&:hover': { background: '#d93025' } }}><CallEndIcon /></IconButton>
