@@ -18,12 +18,12 @@ import { useNavigate } from 'react-router-dom';
 const Video = ({ stream, username }) => {
     const ref = useRef();
 
-    useEffect(() => {
-        if (ref.current) {
-            ref.current.srcObject = stream;
-        } 
-    }, [stream]);
-
+        useEffect(() => {
+            console.log('stream changed', stream);
+            if (ref.current) {
+                ref.current.srcObject = stream;
+            }
+        }, [stream]);
     return (
         <Box sx={{ position: 'relative', height: '100%' }}>
             <video ref={ref} autoPlay playsInline style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }} />
@@ -110,7 +110,11 @@ export default function VideoMeetComponent() {
         const url = window.location.href;
         const code = url.substring(url.lastIndexOf('/') + 1);
         setMeetingCode(code);
-        getPermissions();
+        getPermissions().then(() => {
+            if (localVideoref.current && localStreamRef.current) {
+                localVideoref.current.srcObject = localStreamRef.current;
+            }
+        });
     }, [getPermissions])
 
     useEffect(() => {
@@ -444,7 +448,7 @@ export default function VideoMeetComponent() {
                             Connect
                         </Button>
                         <Box mt={2} borderRadius="10px" overflow="hidden" border="2px solid #3f51b5">
-                            <video ref={localVideoref} autoPlay muted style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
+                            <video ref={localVideoref} autoPlay muted playsInline style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
                         </Box>
                     </Paper>
                 </Box>
@@ -491,7 +495,7 @@ export default function VideoMeetComponent() {
                                     return (
                                         <>
                                             <Box sx={{ flex: `0 0 calc(100% / ${totalParticipants})`, position: 'relative', height: '100%' }}>
-                                                <video ref={localVideoref} autoPlay muted style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
+                                                <video ref={localVideoref} autoPlay muted playsInline style={{ width: '100%', height: '100%', borderRadius: '10px', objectFit: 'cover' }}></video>
                                                 <Typography sx={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.5)', p: '2px 8px', borderRadius: 1 }}>{username} (You)</Typography>
                                             </Box>
                                             {videos.map((video) => (
