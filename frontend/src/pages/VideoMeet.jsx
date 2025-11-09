@@ -266,20 +266,17 @@ export default function VideoMeetComponent() {
 
             socketRef.current.on('user-joined', (id, username, creatorSocketId) => {
                 createPeerConnection(id);
-                connections[id].username = username; // Store the username
+                connections[id].username = username;
                 setIsCreator(socketIdRef.current === creatorSocketId);
-                connections[id].createOffer().then((description) => {
-                    connections[id].setLocalDescription(description)
-                        .then(() => {
-                            socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
-                        })
-                        .catch(e => console.log(e))
-                })
-                setVideos(prevVideos => [...prevVideos, { socketId: id, username, stream: null }]);
+                setVideos(prevVideos => {
+                    if (prevVideos.some(v => v.socketId === id)) return prevVideos;
+                    return [...prevVideos, { socketId: id, username, stream: null }];
+                });
             })
 
             socketRef.current.on('all-users', (users) => {
-                users.forEach((user) => {
+                const filteredUsers = users.filter(user => user.id !== socketIdRef.current);
+                filteredUsers.forEach((user) => {
                     createPeerConnection(user.id);
                     connections[user.id].username = user.username; // Store the username
                     connections[user.id].createOffer().then((description) => {
@@ -290,7 +287,7 @@ export default function VideoMeetComponent() {
                             .catch(e => console.log(e))
                     })
                 })
-                setVideos(users.map(user => ({ socketId: user.id, username: user.username, stream: null })));
+                setVideos(filteredUsers.map(user => ({ socketId: user.id, username: user.username, stream: null })));
             })
         })
     }
